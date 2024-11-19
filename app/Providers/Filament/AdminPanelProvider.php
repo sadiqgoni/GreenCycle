@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\AdminRegistration;
 use App\Filament\Household\Pages\HouseholdRegistration;
+use App\Filament\Management\Widgets\Stats\StatsOverview;
 use App\Filament\Widgets\Greencyclewidgets;
 use App\Http\Middleware\RoleRedirect;
 use Filament\Http\Middleware\Authenticate;
@@ -20,29 +22,37 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 
-class HouseholdPanelProvider extends PanelProvider
+class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('household')
-            ->path('household')
-            ->login()
-            ->registration(HouseholdRegistration::class)
+            ->id('admin')
+            ->path('admin')
             ->colors([
                 'primary' => Color::Green,
             ])
-            ->discoverResources(in: app_path('Filament/Household/Resources'), for: 'App\\Filament\\Household\\Resources')
-            ->discoverPages(in: app_path('Filament/Household/Pages'), for: 'App\\Filament\\Household\\Pages')
+            ->navigationGroups([
+                'Request Management',
+                'Company Management',
+                'Staff Management',
+            ])
+            ->registration(AdminRegistration::class)
+            ->login()
+            ->plugins([  FilamentApexChartsPlugin::make()])
+            ->discoverResources(in: app_path('Filament/Company/Resources'), for: 'App\\Filament\\Company\\Resources')
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Household/Widgets'), for: 'App\\Filament\\Household\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
                 Greencyclewidgets::class,
+                StatsOverview::class
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -56,9 +66,8 @@ class HouseholdPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
+                RoleRedirect::class,
                 Authenticate::class,
-                RoleRedirect::class
-
             ]);
     }
 }
