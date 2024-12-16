@@ -20,10 +20,6 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    // public static function shouldRegisterNavigation(): bool
-    // {
-    //     return Filament::getCurrentPanel()?->getId() === 'management';
-    // }
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
     protected static ?string $navigationGroup = 'Staff Management';
 

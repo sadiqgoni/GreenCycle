@@ -34,7 +34,7 @@ class AdminServiceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('household.name')
                     ->searchable()
                     ->label('Client'),
-                Tables\Columns\TextColumn::make('company.name')
+                Tables\Columns\TextColumn::make('company.company_name')
                     ->searchable()
                     ->badge()
                     ->default('pending')
@@ -53,7 +53,6 @@ class AdminServiceRequestResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('final_amount')
                     ->money('NGN'),
-                // ->visible(fn($record) => $record && $record->status === 'completed'),
                 Tables\Columns\BadgeColumn::make('payment.status')
                     ->label('Payment Status')
                     ->badge()

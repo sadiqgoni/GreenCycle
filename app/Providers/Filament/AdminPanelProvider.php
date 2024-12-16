@@ -32,7 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->colors([
-                'primary' => Color::Green,
+                'primary' => Color::Red,
             ])
             ->navigationGroups([
                 'Request Management',

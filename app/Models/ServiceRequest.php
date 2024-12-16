@@ -60,16 +60,4 @@ class ServiceRequest extends Model
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
-    const STATUS_PENDING = 'pending';
-    const STATUS_ASSIGNED = 'assigned';
-    const STATUS_ACCEPTED = 'accepted';
-    const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_PAID = 'paid';
-    const STATUS_CANCELLED = 'cancelled';
-
-    const PAYMENT_STATUS_PENDING = 'pending';
-    const PAYMENT_STATUS_PAID = 'paid';
-    const PAYMENT_STATUS_RELEASED = 'released';
-
 }

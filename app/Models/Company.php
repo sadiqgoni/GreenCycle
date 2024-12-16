@@ -33,7 +33,6 @@ class Company extends Model
      * The attributes that should be cast to native types.
      */
     protected $casts = [
-        'accepting_requests' => 'boolean',
         'commission_rate' => 'float',
     ];
 
