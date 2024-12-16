@@ -12,7 +12,7 @@
             <!-- Display Today's Date -->
             <div class="flex-1 text-center">
                 <p class= "text-gray-900 dark:text-white">
-                    {{ date('l, F j, Y') }}
+                    dd{{ date('l, F j, Y') }}
                 </p>
             </div>
 
