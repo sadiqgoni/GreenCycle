@@ -20,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 
 class CompanyPanelProvider extends PanelProvider
 {
@@ -29,8 +30,10 @@ class CompanyPanelProvider extends PanelProvider
             ->id('company')
             ->path('company')
             ->colors([
-                'primary' => Color::Green,
+                'primary' => Color::Amber,
             ])
+            ->plugins([  FilamentApexChartsPlugin::make()])
+
             ->registration(CompanyRegistration::class)
             ->login()
             ->discoverResources(in: app_path('Filament/Company/Resources'), for: 'App\\Filament\\Company\\Resources')
@@ -63,6 +66,6 @@ class CompanyPanelProvider extends PanelProvider
                 Authenticate::class,
                 RoleRedirect::class
 
-            ]);
-    }
+                ])->viteTheme('resources/css/filament/company/theme.css');
+            }
 }

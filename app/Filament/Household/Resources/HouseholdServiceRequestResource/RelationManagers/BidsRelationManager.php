@@ -144,7 +144,7 @@ class BidsRelationManager extends RelationManager
                 ->requiresConfirmation()
                 ->color('success')
                 ->icon('heroicon-o-check-circle')
-                // ->hidden(fn ($record) => $record->pivot->status === 'declined' || $record->pivot->status === 'accepted'), // Hide if bid is already accepted
+                ->hidden(fn ($record) => $record->pivot->status === 'declined' || $record->pivot->status === 'accepted'), // Hide if bid is already accepted
             
             ]);
     }

@@ -5,23 +5,23 @@ namespace App\Filament\Admin\Widgets;
 use App\Models\Company;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CompanyStatusChart extends ApexChartWidget
+class CompanyApprovalStatusChart extends ApexChartWidget
 {
     /**
      * Chart Id
      *
      * @var string
      */
-    protected static ?string $chartId = 'companyStatusChart';
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
+    protected static ?string $chartId = 'companyApprovalStatusChart';
 
     /**
      * Widget Title
      *
      * @var string|null
      */
-    protected static ?string $heading = 'Company Request Status';
+    protected static ?string $heading = 'CompanyApprovalStatusChart';
 
     /**
      * Chart options (series, labels, types, size, animations...)
@@ -31,12 +31,10 @@ class CompanyStatusChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        // Fetching the count of pending, approved, and rejected requests
-        $data = Company::selectRaw('
-            COUNT(CASE WHEN verification_status = "pending" THEN 1 END) as pending,
-            COUNT(CASE WHEN verification_status = "approved" THEN 1 END) as approved,
-            COUNT(CASE WHEN verification_status = "rejected" THEN 1 END) as rejected
-        ')->first();
+          // Fetch counts of companies grouped by their verification status
+          $companyStatuses = Company::selectRaw('verification_status, COUNT(*) as count')
+          ->groupBy('verification_status')
+          ->pluck('count', 'verification_status');
 
         return [
             'chart' => [
@@ -45,16 +43,17 @@ class CompanyStatusChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => 'Requests',
-                    'data' => [
-                        $data->pending ?? 0,
-                        $data->approved ?? 0,
-                        $data->rejected ?? 0,
-                    ],
+                    'name' => 'Companies',
+                    'data' => $companyStatuses->values()->toArray(),
                 ],
             ],
             'xaxis' => [
-                'categories' => ['Pending', 'Approved', 'Rejected'],
+                'categories' => $companyStatuses->keys()->map(function ($status) {
+                    return ucfirst($status); // Capitalize statuses (e.g., 'verified')
+                })->toArray(),
+                'title' => [
+                    'text' => 'Verification Status',
+                ],
                 'labels' => [
                     'style' => [
                         'fontFamily' => 'inherit',
@@ -62,26 +61,22 @@ class CompanyStatusChart extends ApexChartWidget
                 ],
             ],
             'yaxis' => [
+                'title' => [
+                    'text' => 'Number of Companies',
+                ],
                 'labels' => [
                     'style' => [
                         'fontFamily' => 'inherit',
                     ],
                 ],
             ],
-            'colors' => ['#f59e0b', '#10b981', '#ef4444'], // Yellow, Green, Red for each status
+            'colors' => ['#f59e0b','#28a745', '#ffc107', '#dc3545'],
             'plotOptions' => [
                 'bar' => [
                     'borderRadius' => 3,
                     'horizontal' => false,
                 ],
             ],
-            // 'tooltip' => [
-            //     'y' => [
-            //         'formatter' => function ($val) {
-            //             return $val . " requests";
-            //         },
-            //     ],
-            // ],
         ];
     }
 }

@@ -1,0 +1,96 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+@config 'tailwind.config.js';
+
+/* Sidebar */
+.fi-sidebar {
+  @apply bg-green-500 dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 shadow-lg !important;
+}
+
+.fi-sidebar-nav {
+  @apply bg-green-400 hover:bg-green-300 dark:bg-gray-700 mr-4 shadow-md rounded-lg;
+}
+
+/* Sidebar Header */
+.fi-sidebar-header {
+  @apply dark:bg-gray-900 bg-green-500 ring-0 shadow-none mr-4;
+}
+
+.fi-topbar nav {
+   
+    @apply dark:bg-gray-900 bg-green-500 ring-0 shadow-none ;
+}
+
+
+.fi-logo {
+  width: auto;
+  max-width: 180px;
+  @apply px-14 !h-16 object-contain object-center transition-all duration-300;
+
+  &:is(img) {
+      @apply shadow-md hover:shadow-lg rounded-xl bg-green-200
+             ring-2 ring-green-500/20 dark:ring-white/20 
+             hover:ring-green-500/30 dark:hover:ring-white/30 dark:bg-gray-500
+             transform hover:scale-105 !important;
+  }
+
+  &:not(img) {
+      @apply inline-flex items-center text-xl font-semibold 
+             text-green-900 dark:text-green-400;
+  }
+}
+
+/* Sidebar Item Active */
+.fi-sidebar-item-active a {
+  @apply bg-green-600 hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 text-white transition-all ease-in-out;
+}
+
+/* Sidebar Text and Icon */
+.fi-sidebar-item-label, .fi-sidebar-item-icon, .fi-sidebar-group-label, .fi-icon-btn {
+  @apply text-gray-800 dark:text-gray-200; /* Inactive state */
+}
+
+.fi-sidebar-item-active .fi-sidebar-item-label, 
+.fi-sidebar-item-active .fi-sidebar-item-icon, 
+.fi-sidebar-item-active .fi-sidebar-group-label, 
+.fi-sidebar-item-active .fi-icon-btn {
+  @apply text-white dark:text-white; /* Active state */
+}
+
+/* Header */
+.fi-header-heading {
+  @apply bg-gradient-to-r from-green-600 to-green-400 text-transparent bg-clip-text font-bold;
+}
+
+.fi-header-heading, .fi-header-subheading {
+  @apply duration-1000 animate-in slide-in-from-right-5 fade-in;
+}
+
+/* Body */
+body {
+  @apply !bg-green-200 dark:!bg-green-950;
+}
+
+/* Login Page Background */
+.fi-simple-main {
+    @apply bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm;
+}
+
+/* Animations */
+.fi-breadcrumbs {
+  @apply duration-1000 animate-in slide-in-from-right-5 fade-in;
+}
+
+.fi-section-content > div {
+  @apply duration-1000 animate-in fade-in;
+}
+
+.fi-in-tabs-tab > dl {
+  @apply duration-1000 animate-in fade-in;
+}
+
+/* Buttons */
+
+
+button:disabled {
+  @apply bg-gray-400 dark:bg-gray-600 cursor-not-allowed;
+}
