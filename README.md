@@ -13,7 +13,7 @@ A modern waste management and recycling platform built with Laravel and Filament
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/GreenCycle.git
+git clone https://github.com/sadiqgoni/GreenCycle.git
 cd GreenCycle
 ```
 
