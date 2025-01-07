@@ -23,6 +23,11 @@ class AdminServiceRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'Service Request';
     protected static ?string $navigationGroup = 'Request Management';
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')
+            ->count();
+    }
     public static function table(Table $table): Table
     {
         return $table
@@ -34,18 +39,30 @@ class AdminServiceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('household.name')
                     ->searchable()
                     ->label('Client'),
-                Tables\Columns\TextColumn::make('company.company_name')
+                    Tables\Columns\TextColumn::make('address')
                     ->searchable()
+                    ->label('Address'),
+                Tables\Columns\TextColumn::make('client_number')
+                    ->searchable()
+                    ->label('Phone'),
+                    Tables\Columns\TextColumn::make('accepted_company_id')
+                    ->formatStateUsing(fn($state): string => Company::find((int) $state)?->company_name ?? 'Pending Company') // Cast to int if needed
+                    ->label('Assigned Company')
                     ->badge()
                     ->default('pending')
-                    ->label('Assigned Company'),
-
+                    ->colors([
+                        'success' => 'confirmed',
+                        'warning' => 'pending',
+                        'danger' => 'failed',
+                    ]),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'assigned' => 'warning',
                         'accepted' => 'success',
+                        'awaiting_payment' => 'warning',
+                        'payment_sent' => 'info',
                         'in_progress' => 'info',
                         'completed' => 'success',
                         'paid' => 'success',
@@ -62,7 +79,7 @@ class AdminServiceRequestResource extends Resource
                         'warning' => 'pending',
                         'danger' => 'failed',
                     ]),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
             ])
@@ -80,44 +97,18 @@ class AdminServiceRequestResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\Action::make('assign_company')
-                    ->visible(fn($record) => $record->status === 'pending')
-                    ->form([
-                        Forms\Components\Select::make('company_id')
-                            ->label('Select Company')
-                            ->searchable()
-                            ->preload()
-                            ->options(fn() => Company::where('verification_status', 'verified')
-                                ->where('availability_status', 'open')
-                                ->pluck('company_name', 'id'))
-                            ->required(),
 
-                    ])
-                    ->action(function (ServiceRequest $record, array $data): void {
-                        $company = Company::find($data['company_id']);
-                        if ($company) {
-                            $record->update([
-                                'company_id' => $data['company_id'],
-                                'company_user_id' => $company->user_id, // Set company_user_id
-                                'status' => 'assigned',
-                            ]);
-                        } else {
-                            throw new \Exception('Company not found.');
-                        }
-                    }),
                 Tables\Actions\Action::make('confirm_payment')
                     ->visible(fn($record) => $record->payment && $record->payment->status === 'pending')
                     ->requiresConfirmation()
                     ->action(function (ServiceRequest $record): void {
-                        $payment = $record->payment; // Access the associated payment
+                        $payment = $record->payment;
                         $payment->update([
                             'status' => 'confirmed',
                             'paid_at' => now(),
                         ]);
-
-                        // Optional: Update ServiceRequest status if needed
-                        $record->update([
-                            'payment_status' => 'paid',
+                        $record->update(attributes: [
+                            'status' => 'paid',
                         ]);
                     }),
                 Tables\Actions\Action::make('process_commission')
@@ -128,15 +119,32 @@ class AdminServiceRequestResource extends Resource
                         $record->payment->status === 'confirmed' && // Ensure payment is confirmed
                         !$record->commission_paid_at
                     )
+                    ->modalWidth(\Filament\Support\Enums\MaxWidth::Medium)
+                    ->modalButton('Payment')
                     ->form([
                         Forms\Components\TextInput::make('commission_percentage')
                             ->label('Commission Percentage (%)')
-                            ->default(10), // Default commission is 10%
-                        
+                            ->default(10)
+                            ->numeric()
+                            ->reactive() // Make it reactive
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                $final_amount = (float) preg_replace('/[^0-9.]/', '', $get('final_amount'));
+                                $set('commission_preview', $final_amount * ($state / 100)); // Update preview dynamically
+                            }),
                         Forms\Components\Placeholder::make('commission_preview')
                             ->label('Commission Amount')
+                            ->content(function ($state, callable $set, $record) {
+                                $amount = $record->final_amount;
+
+                                return '₦' . number_format($amount, 2);
+                            }),
+
+                        Forms\Components\Placeholder::make('company_payout')
+                            ->label('Company Payout Amount')
                             ->content(function ($get, $record) {
-                                $percentage = $get('commission_percentage') ?? 10;
+                                $percentage = (float) preg_replace('/[^0-9.]/', '', $get('commission_percentage'));
+
+                                // $percentage = $get('commission_percentage') ?? 10;
                                 $amount = $record->final_amount * ($percentage / 100);
                                 return '₦' . number_format($amount, 2);
                             }),
@@ -153,9 +161,8 @@ class AdminServiceRequestResource extends Resource
                             'company_payout_amount' => $companyPayout,
                             'commission_paid_at' => now(),
                         ]);
+                    })
 
-
-                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

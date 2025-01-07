@@ -35,7 +35,10 @@ class Company extends Model
     protected $casts = [
         'commission_rate' => 'float',
     ];
-
+    public function companyServiceRequest()
+    {
+        return $this->hasMany(CompanyServiceRequest::class, 'company_id');
+    }
     /**
      * Define a one-to-many relationship with ServiceRequest.
      */

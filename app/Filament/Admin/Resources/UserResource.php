@@ -16,6 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 
 use Filament\Infolists\Infolist;
+use Illuminate\Database\Eloquent\Model;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
@@ -43,6 +44,7 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Full Name')
                             ->required()
+                            
                             ->afterStateUpdated(fn($state, $set) => $formatName($state, $set, 'name'))
                             ->maxLength(255)
                             ->placeholder('Enter full name'),
@@ -79,6 +81,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Full Name')
                     ->searchable()
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#1261A0'))
+                    ->weight('bold')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('email')
@@ -86,15 +90,14 @@ class UserResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('role')
-                    ->label('Role')
-                    ->colors([
-                        'success' => 'Household',
-                        'info' => 'Company',
-                        'warning' => 'Admin',
-
-                    ]),
-
+       
+                    Tables\Columns\TextColumn::make('role')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'household' => 'success',
+                        'admin' => 'info',
+                        'company' => 'warning',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date Created')
                     ->dateTime()

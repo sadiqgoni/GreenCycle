@@ -5,9 +5,11 @@ namespace App\Filament\Company\Resources;
 use App\Filament\Company\Resources\CompanyServiceRequestResource\Pages;
 use App\Filament\Company\Resources\CompanyServiceRequestResource\RelationManagers;
 use App\Models\ServiceRequest;
+use DB;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -23,15 +25,32 @@ class CompanyServiceRequestResource extends Resource
     protected static ?string $modelLabel = 'Waste Service Response';
     protected static ?string $navigationLabel = 'Waste Service Response';
     protected static ?string $navigationIcon = 'heroicon-o-truck';
+    // public static function getEloquentQuery(): Builder
+    // {
+    //     return parent::getEloquentQuery()
+    //         ->where('company_user_id', auth()->id());
+    // }
+
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('company_user_id', auth()->id());
+            ->whereHas('companyServiceRequest', function ($query) {
+                $query->where('company_user_id', auth()->id())
+                    ->whereIn('status', ['pending', 'bid', 'accepted']); // Include only specific statuses
+            });
     }
+
+
 
     public static function shouldRegisterNavigation(): bool
     {
         return Filament::getCurrentPanel()?->getId() === 'company';
+    }
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')
+            ->count();
     }
     public static function table(Table $table): Table
     {
@@ -43,9 +62,20 @@ class CompanyServiceRequestResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('household.name')
                     ->searchable()
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#1261A0'))
+                    ->weight('bold')
                     ->label('Client'),
 
-
+                Tables\Columns\TextColumn::make('address')
+                    ->searchable()
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#15803d'))
+                    ->weight('bold')
+                    ->label('Address'),
+                Tables\Columns\TextColumn::make('client_number')
+                    ->searchable()
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#19803d'))
+                    ->weight('bold')
+                    ->label('Phone'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -53,6 +83,8 @@ class CompanyServiceRequestResource extends Resource
                         'assigned' => 'warning',
                         'accepted' => 'success',
                         'in_progress' => 'info',
+                        'awaiting_payment' => 'warning',
+                        'payment_sent' => 'info',
                         'completed' => 'success',
                         'paid' => 'success',
                         'cancelled' => 'danger',
@@ -62,20 +94,7 @@ class CompanyServiceRequestResource extends Resource
 
                 Tables\Columns\TextColumn::make('preferred_time')
                     ->time(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'pending' => 'gray',
-                        'assigned' => 'warning',
-                        'accepted' => 'warning',
-                        'in_progress' => 'warning',
-                        'completed' => 'success',
-                        'paid' => 'success',
-                        'cancelled' => 'danger',
-                    }),
-
-                Tables\Columns\TextColumn::make('estimated_cost')
+                Tables\Columns\TextColumn::make('final_amount')
                     ->default('pending')
                     ->money('NGN'),
                 Tables\Columns\TextColumn::make('company_payout_amount')
@@ -101,8 +120,45 @@ class CompanyServiceRequestResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\Action::make('accept_request')
-                    ->visible(fn($record) => $record->status === 'assigned')
+                Tables\Actions\Action::make('place_bid')
+                    ->label('Place Bid')
+                    ->form([
+                        Forms\Components\TextInput::make('bid_amount')
+                            ->label('Bid Amount')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Notes')
+                            ->maxLength(255),
+                    ])
+                    ->action(function (array $data, $record) {
+
+                        // Save the bid to the pivot table
+                        DB::table('company_service_requests')
+                            ->updateOrInsert(
+                                [
+                                    'service_request_id' => $record->id,
+                                    'company_user_id' => auth()->id(),
+                                ],
+                                [
+                                    'bid_amount' => $data['bid_amount'],
+                                    'notes' => $data['notes'],
+                                    'status' => 'bid', // Update status to 'bid'
+                                    'updated_at' => now(),
+                                ]
+                            );
+
+                        Notification::make()
+                            ->title('Bid placed successfully!')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->visible(fn($record) => $record->accepted_company_id === null),
+
+                Tables\Actions\Action::make('chosen_company')
+                    ->visible(fn($record) => $record->company_user_id === auth()->id())
                     ->color('success')
                     ->icon('heroicon-o-check')
                     ->requiresConfirmation()
@@ -123,25 +179,18 @@ class CompanyServiceRequestResource extends Resource
                             ->label('Estimated Duration (hours)')
                             ->numeric()
                             ->required(),
-
-                        Forms\Components\TextInput::make('estimated_cost')
-                            ->label('Estimated Cost (₦)')
-                            ->numeric()
-                            ->required(),
                     ])
                     ->action(function (ServiceRequest $record, array $data): void {
                         $record->update([
-                            'status' => 'accepted',
                             'scheduled_date' => $data['scheduled_date'],
                             'scheduled_time' => $data['scheduled_time'],
                             'company_notes' => $data['company_notes'],
                             'estimated_duration' => $data['estimated_duration'],
-                            'estimated_cost' => $data['estimated_cost'],
                         ]);
                     }),
 
                 Tables\Actions\Action::make('start_work')
-                    ->visible(fn($record) => $record->status === 'accepted')
+                    ->visible(fn($record) => $record->status === 'paid')
                     ->color('primary')
                     ->icon('heroicon-o-play')
                     ->action(function (ServiceRequest $record): void {
@@ -156,11 +205,7 @@ class CompanyServiceRequestResource extends Resource
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->form([
-                        Forms\Components\TextInput::make('final_amount')
-                            ->label('Final Amount (₦)')
-                            ->numeric()
-                            ->required()
-                            ->default(fn($record) => $record->estimated_cost),
+
 
                         Forms\Components\Textarea::make('completion_notes')
                             ->label('Work Completion Notes')
@@ -175,7 +220,6 @@ class CompanyServiceRequestResource extends Resource
                     ->action(function (ServiceRequest $record, array $data): void {
                         $record->update([
                             'status' => 'completed',
-                            'final_amount' => $data['final_amount'],
                             'completion_notes' => $data['completion_notes'],
                             'completion_photos' => $data['completion_photos'],
                             'completed_at' => now(),

@@ -22,6 +22,7 @@ use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CompanyResource extends Resource
@@ -97,15 +98,21 @@ class CompanyResource extends Resource
                     ->size(40),
                 TextColumn::make('company_name')
                     ->label('Company Name')
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#22e03a'))
+                    ->weight('bold')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('ceo_name')
                     ->label('CEO Name')
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#15803d'))
+                    ->weight('bold')
                     ->searchable(),
 
                 TextColumn::make('contact_info')
                     ->label('Contact Info')
+                    ->color(fn(?Model $record): array => \Filament\Support\Colors\Color::hex(optional($record->tenant)->color ?? '#1261A0'))
+                    ->weight('bold')
                     ->searchable(),
                 BadgeColumn::make('verification_status')
                     ->label('Verification')

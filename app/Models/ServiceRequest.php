@@ -36,7 +36,8 @@ class ServiceRequest extends Model
         'commission_paid_at',
         'completion_notes',
         'completion_photos',
-        'company_user_id'
+        'company_user_id',
+        'accepted_company_id',
     ];
     protected $casts = [
         'payment_amount' => 'decimal:2',
@@ -47,6 +48,27 @@ class ServiceRequest extends Model
         'payment_received_at' => 'datetime',
         'commission_paid_at' => 'datetime'
     ];
+    
+
+    public function companyBids()
+{
+    return $this->belongsToMany(Company::class, 'company_service_requests')
+        ->withPivot('bid_amount', 'notes', 'status','company_id')
+        ->withTimestamps(); // Access pivot fields like bid_amount, notes, and status
+}
+
+    
+    // public function bids()
+    // {
+    //     return $this->hasManyThrough(
+    //         Bid::class,
+    //         CompanyServiceRequest::class,
+    //         'service_request_id',
+    //         'id',
+    //         'id',
+    //         'id'
+    //     );
+    // }
 
     public function household()
     {
@@ -59,5 +81,11 @@ class ServiceRequest extends Model
     public function company()
     {
         return $this->belongsTo(Company::class, 'company_id');
+    }
+
+    public function companyServiceRequest()
+    {
+        return $this->hasOne(CompanyServiceRequest::class, 'service_request_id');
+
     }
 }
